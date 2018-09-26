@@ -14,51 +14,137 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.example.ndbao.movielist.data.model.Result;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> {
-    private static final String BASE_IMG_URL = "https://image.tmdb.org/t/p/w500/";
-    private List<Result> moviesList;
+public class MovieAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    private static final int ITEM = 0;
+    private static final int LOADING = 1;
+    private static final String BASE_URL_IMG = "https://image.tmdb.org/t/p/w500/";
+
+    private List<Result> movieResuls;
     private Context context;
 
-    public MovieAdapter(List<Result> moviesList, Context context) {
-        this.moviesList = moviesList;
+    private boolean isLoadingAdded = false;
+
+    public MovieAdapter(Context context) {
+        movieResuls = new ArrayList<>();
         this.context = context;
     }
 
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-        View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.movie_item, viewGroup, false);
-        return new ViewHolder(view);
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int viewType) {
+        RecyclerView.ViewHolder viewHolder = null;
+        LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
+
+        switch (viewType) {
+            case ITEM:
+                View v1 = inflater.inflate(R.layout.movie_item, viewGroup,false);
+                viewHolder = new MovieVH(v1);
+                break;
+            case LOADING:
+                View v2 = inflater.inflate(R.layout.item_progress, viewGroup, false);
+                viewHolder = new LoadingVH(v2);
+                break;
+        }
+        return viewHolder;
     }
+
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder viewHolder, final int i) {
-
-        Result result = moviesList.get(i);
-        viewHolder.txtName.setText(result.getTitle());
-        viewHolder.txtRating.setText(result.getVoteAverage().toString());
-        viewHolder.txtPopularity.setText(result.getPopularity().toString());
-        viewHolder.txtReleaseDate.setText(result.getReleaseDate());
-        String IMG_URL = BASE_IMG_URL + result.getBackdropPath();
-        Glide.with(context)
-                .load(IMG_URL)
-                .into(viewHolder.imgMovie);
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
+        Result result = movieResuls.get(position);
+        switch (getItemViewType(position)) {
+            case ITEM:
+                MovieVH movieVH = (MovieVH) viewHolder;
+                movieVH.txtName.setText(result.getTitle());
+                movieVH.txtRating.setText(result.getVoteAverage().toString());
+                movieVH.txtPopularity.setText(result.getPopularity().toString());
+                movieVH.txtReleaseDate.setText(result.getReleaseDate());
+                String IMG_URL = BASE_URL_IMG + result.getBackdropPath();
+                Glide.with(context)
+                        .load(IMG_URL)
+                        .into(movieVH.imgMovie);
+                break;
+            case LOADING:
+                break;
+        }
     }
+
     @Override
     public int getItemCount() {
-        return moviesList == null ? 0 : moviesList.size();
+        return movieResuls == null ? 0 : movieResuls.size();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    @Override
+    public int getItemViewType(int position) {
+        return (position == movieResuls.size() - 1 && isLoadingAdded) ? LOADING : ITEM;
+    }
+
+
+    // Helpers
+
+    public void add(Result r) {
+        movieResuls.add(r);
+        notifyItemInserted(movieResuls.size() - 1);
+    }
+
+    public void updateMovies(List<Result> movies) {
+        movieResuls.addAll(movies);
+        notifyDataSetChanged();
+    }
+
+    public void remove(Result r) {
+        int position = movieResuls.indexOf(r);
+        if (position > -1) {
+            movieResuls.remove(position);
+            notifyItemRemoved(position);
+        }
+    }
+
+    public void clear() {
+        isLoadingAdded = false;
+        while (getItemCount() > 0) {
+            remove(getItem(0));
+        }
+    }
+
+    public boolean isEmpty() {
+        return getItemCount() == 0;
+    }
+
+    public void addLoadingFooter() {
+        isLoadingAdded = true;
+        add(new Result());
+    }
+
+    public void removeLoadingFooter() {
+        isLoadingAdded = false;
+
+        int positon = movieResuls.size() - 1;
+        Result result = getItem(positon);
+
+        if (result != null) {
+            movieResuls.remove(positon);
+            notifyItemRemoved(positon);
+        }
+    }
+
+    public Result getItem(int positon) {
+        return movieResuls.get(positon);
+    }
+
+
+
+    public class MovieVH extends RecyclerView.ViewHolder {
         ImageView imgMovie;
         TextView txtName;
         TextView txtRating;
         TextView txtReleaseDate;
         TextView txtPopularity;
 
-        public ViewHolder(@NonNull View itemView) {
+        public MovieVH(@NonNull View itemView) {
             super(itemView);
             imgMovie = itemView.findViewById(R.id.img_movie);
             txtName = itemView.findViewById(R.id.txtName);
@@ -68,9 +154,13 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
         }
     }
 
-    public void updateMovies(List<Result> movies) {
-        moviesList.addAll(movies);
-        notifyDataSetChanged();
+    protected class LoadingVH extends RecyclerView.ViewHolder {
+
+        public LoadingVH(@NonNull View itemView) {
+            super(itemView);
+        }
     }
+
+
 
 }
