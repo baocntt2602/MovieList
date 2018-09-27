@@ -13,6 +13,7 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.example.ndbao.movielist.data.model.Result;
+import com.example.ndbao.movielist.utils.CustomItemClickListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,27 +22,35 @@ public class MovieAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     private static final int ITEM = 0;
     private static final int LOADING = 1;
     private static final String BASE_URL_IMG = "https://image.tmdb.org/t/p/w500/";
-
+    private CustomItemClickListener listener;
     private List<Result> movieResuls;
     private Context context;
-
+    private RecyclerView.ViewHolder viewHolder = null;
     private boolean isLoadingAdded = false;
 
-    public MovieAdapter(Context context) {
+    public MovieAdapter(Context context, CustomItemClickListener listener) {
         movieResuls = new ArrayList<>();
         this.context = context;
+        this.listener = listener;
     }
 
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int viewType) {
-        RecyclerView.ViewHolder viewHolder = null;
+
         LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
 
         switch (viewType) {
             case ITEM:
                 View v1 = inflater.inflate(R.layout.movie_item, viewGroup,false);
                 viewHolder = new MovieVH(v1);
+                final RecyclerView.ViewHolder finalViewHolder = viewHolder;
+                v1.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        listener.onItemClick(v, finalViewHolder.getLayoutPosition() );
+                    }
+                });
                 break;
             case LOADING:
                 View v2 = inflater.inflate(R.layout.item_progress, viewGroup, false);
@@ -103,6 +112,10 @@ public class MovieAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         }
     }
 
+    public Result getMovieDetail(int positon) {
+        return movieResuls.get(positon);
+    }
+
     public void clear() {
         isLoadingAdded = false;
         while (getItemCount() > 0) {
@@ -116,7 +129,6 @@ public class MovieAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
     public void addLoadingFooter() {
         isLoadingAdded = true;
-        add(new Result());
     }
 
     public void removeLoadingFooter() {

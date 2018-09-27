@@ -1,5 +1,6 @@
 package com.example.ndbao.movielist;
 
+import android.content.Intent;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -8,13 +9,16 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.View;
 import android.widget.AbsListView;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import com.example.ndbao.movielist.data.model.MovieList;
 import com.example.ndbao.movielist.data.model.Result;
 import com.example.ndbao.movielist.data.model.remote.APIUtils;
 import com.example.ndbao.movielist.data.model.remote.SOService;
+import com.example.ndbao.movielist.utils.CustomItemClickListener;
 import com.example.ndbao.movielist.utils.PaginationScrollListener;
 
 import java.util.List;
@@ -27,7 +31,6 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     MovieAdapter adapter;
     LinearLayoutManager linearLayoutManager;
-
     RecyclerView rv;
 
     private static final int PAGE_START = 1;
@@ -44,7 +47,17 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         rv = findViewById(R.id.recycler_view);
-        adapter = new MovieAdapter(this);
+        adapter = new MovieAdapter(this, new CustomItemClickListener() {
+            @Override
+            public void onItemClick(View v, int positon) {
+                Toast.makeText(MainActivity.this, adapter.getItem(positon).getTitle(), Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(getApplicationContext(), MovieDetailActivity.class);
+                intent.putExtra("moviedetail", adapter.getItem(positon));
+                startActivity(intent);
+            }
+        });
+
+
 
         linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         rv.setLayoutManager(linearLayoutManager);
@@ -90,7 +103,6 @@ public class MainActivity extends AppCompatActivity {
             public void onResponse(Call<MovieList> call, Response<MovieList> response) {
                 List<Result> results = response.body().getResults();
                 adapter.updateMovies(results);
-
                 if (currentPage <= TOTAL_PAGES)
                     adapter.addLoadingFooter();
                 else isLastPage = true;
